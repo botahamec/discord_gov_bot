@@ -10,10 +10,12 @@ use serenity::{
 };
 
 //stdlib imports
-use std::io::{
-	Result, 
-	Error,
-	ErrorKind,
+use std::{
+	io::{
+		Result, 
+		Error,
+		ErrorKind,
+	}
 };
 
 pub fn add_speaker_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {

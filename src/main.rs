@@ -31,6 +31,9 @@ use serenity::{
 	},
 };
 
+use std::fs::File;
+use std::io::Read;
+
 // COMMANDS
 
 //ROLES
@@ -77,7 +80,7 @@ pub fn set_url(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 
 // REPORTING
 
-pub fn vote(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+pub fn vote(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
 	vote_command(ctx, msg)?;
 	Ok(())
 }
@@ -134,19 +137,28 @@ impl EventHandler for Handler {
 }
 
 fn main() {
-	// Login with a bot token from the environment
-	let DISCORD_TOKEN = "NjA2MjExODM1OTUxMDU0ODg2.XUHwyA.T8M9wzh7HODFMNvymCiA4SwQ1Jw";
+
+	// Get key from an external file
+	let mut DISCORD_TOKEN = String::new();
+	let mut key_file = File::open(".key").unwrap();
+	key_file.read_to_string(&mut DISCORD_TOKEN).unwrap();
+	println!("{}", DISCORD_TOKEN);
+
+	// Login with the key
 	let mut client = Client::new(DISCORD_TOKEN, Handler)
 		.expect("Error creating client");
+	println!("Created client");
 	client.with_framework(StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
         .group(&ROLES_GROUP)
 		.group(&CHANNELS_GROUP)
 		.group(&SPEAKER_GROUP)
 		.group(&REPORTING_GROUP));
+	println!("Created framework");
 	
 	// start listening for events by starting a single shard
 	if let Err(why) = client.start() {
 		println!("An error occurred while running the client: {:?}", why);
 	}
+	println!("Something happened...");
 }
