@@ -1,5 +1,6 @@
 //stdlib imports
 use std::{
+	fs,
 	fs::{
 		File,
 		DirBuilder
@@ -34,11 +35,11 @@ pub fn file_contains(path: String, string: String) -> Result<bool> {
 
 ///converts a file to a list and adds an item to it
 pub fn add_to_file(path: String, string: String) -> Result<()> {
-	let mut file = File::open(path)?;
+	let mut file = File::open(path.clone())?;
 	let mut text = String::new();
 	file.read_to_string(&mut text)?;
 	text = format!("{}\n{}", text, string);
-	file.write(text.as_bytes())?;
+	fs::write(path.clone(), text)?;
 	Ok(())
 }
 
@@ -58,7 +59,7 @@ pub fn make_dir(path: String) -> Result<()> {
 }
 
 ///creates a folder at the path specified for the given guild
-pub fn create_dir(id: u64, path: &str) -> Result<()> {
+pub fn create_dir(id: u64, path: String) -> Result<()> {
 	make_dir(format!("data/{}/{}", id, path))?;
 	Ok(())
 }
@@ -71,21 +72,27 @@ pub fn create_file(id: u64, file: &str) -> Result<()> {
 
 ///creates a file for the guild specified with the given path
 pub fn create_vote_channel_file(guild: u64, channel: u64, file: &str) -> Result<()> {
-	File::create(format!("data/{}/voting_channels/{}/{}.txt", guild, channel, file))?;
+	File::create(format!("data/{}/votes/{}/{}.txt", guild, channel, file))?;
 	Ok(())
 }
 
 pub fn write_to_file(path: String, text: String) -> Result<()> {
-	let mut file = File::open(path)?;
-	file.write(text.as_bytes())?;
+	fs::write(path.clone(), text)?;
 	Ok(())
 }
 
 ///copies file from files to the folder of a specified guild
+#[cfg(target="linux")]
 pub fn copy_file(id: u64, file: &str) {
 	Command::new("cp")
 		.arg(format!("files/{}.txt", file))
 		.arg(format!("data/{}/{}.txt", id, file))
-		.status()
-		.unwrap();
+		.status().unwrap();
+}
+
+#[cfg(target_os="windows")]
+pub fn copy_file(id: u64, file: &str) {
+	Command::new("xcopy").arg(&format!("files/{}.txt", file))
+                        .arg(&format!("data/{}/{}.txt", id, file))
+                        .status().unwrap();
 }

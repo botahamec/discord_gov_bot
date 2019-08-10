@@ -55,6 +55,9 @@ pub fn add_voting_channel_command(ctx: &mut Context, msg: &Message) -> Result<()
 	};
 	let channel_id = msg.channel_id.0;
 
+	// creates directory for the channel
+	create_dir(guild_id, format!("votes/{}", channel_id))?;
+
 	create_vote_channel_file(guild_id, channel_id, "abbr")?;
 	create_vote_channel_file(guild_id, channel_id, "yeas")?;
 	create_vote_channel_file(guild_id, channel_id, "nays")?;
@@ -172,7 +175,7 @@ pub fn check_msg_for_votes(msg: Message) -> Result<()> {
 	let guild_id = msg.guild_id.unwrap().0;
 
 	//checks if the channel is a voting channel
-	if file_contains(guild_file(guild_id, "vote_channels"), format!("{}", msg.channel_id.0)).unwrap() {
+	if file_contains(guild_file(guild_id, "voting_channels"), format!("{}", msg.channel_id.0)).unwrap() {
 		let vote = msg.content;
 		if file_contains(guild_file(guild_id, "yeas"), vote.clone()).unwrap() {unimplemented!("Yea cast");}
 		if file_contains(guild_file(guild_id, "nays"), vote.clone()).unwrap() {unimplemented!("Nay cast");}
@@ -185,16 +188,21 @@ pub fn check_msg_for_votes(msg: Message) -> Result<()> {
 ///adds the data of a new server to the database
 pub fn add_server(guild: u64) -> Result<()> {
 
-	//sets up directory structure
-	make_dir(format!("data/{}", guild))?; //creates the folder for the server
-	create_dir(guild, "votes")?; //information on current votes
+	if file_contains(String::from("data/servers.txt"), format!("{}", guild)).unwrap() {
 
-	//creates the necessary files
-	create_file(guild, "voting_channels")?; //list of voting channels
-	create_file(guild, "speaker_roles")?;
-	copy_file(guild, "yeas");
-	copy_file(guild, "nays");
-	copy_file(guild, "abst");
+		add_to_file(String::from("data/servers.txt"), format!("{}", guild))?;
+		
+		//sets up directory structure
+		make_dir(format!("data/{}", guild))?; //creates the folder for the server
+		create_dir(guild, String::from("votes"))?; //information on current votes
+
+		//creates the necessary files
+		create_file(guild, "voting_channels")?; //list of voting channels
+		create_file(guild, "speaker_roles")?;
+		copy_file(guild, "yeas");
+		copy_file(guild, "nays");
+		copy_file(guild, "abst");
+	}
 
 	Ok(())
 }

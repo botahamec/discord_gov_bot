@@ -142,23 +142,19 @@ fn main() {
 	let mut DISCORD_TOKEN = String::new();
 	let mut key_file = File::open(".key").unwrap();
 	key_file.read_to_string(&mut DISCORD_TOKEN).unwrap();
-	println!("{}", DISCORD_TOKEN);
 
 	// Login with the key
 	let mut client = Client::new(DISCORD_TOKEN, Handler)
 		.expect("Error creating client");
-	println!("Created client");
 	client.with_framework(StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
         .group(&ROLES_GROUP)
 		.group(&CHANNELS_GROUP)
 		.group(&SPEAKER_GROUP)
 		.group(&REPORTING_GROUP));
-	println!("Created framework");
 	
 	// start listening for events by starting a single shard
 	if let Err(why) = client.start() {
 		println!("An error occurred while running the client: {:?}", why);
 	}
-	println!("Something happened...");
 }
