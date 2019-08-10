@@ -86,7 +86,7 @@ pub fn set_title_command(ctx: &mut Context, msg: &Message, args: Args) -> Result
 	};
 	let channel_id = msg.channel_id.0;
 
-	add_to_file(voting_channel_file(guild_id, channel_id, "title"), String::from(title))?;
+	write_to_file(voting_channel_file(guild_id, channel_id, "title"), String::from(title))?;
 	if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The title for members of this channel has changed")) {
 		println!("Couldn't send message, \n {}", e);
 	};
@@ -190,7 +190,7 @@ pub fn add_server(guild: u64) -> Result<()> {
 
 	if file_contains(String::from("data/servers.txt"), format!("{}", guild)).unwrap() {
 
-		add_to_file(String::from("data/servers.txt"), format!("{}", guild))?;
+		//add_to_file(String::from("data/servers.txt"), format!("{}", guild))?;
 		
 		//sets up directory structure
 		make_dir(format!("data/{}", guild))?; //creates the folder for the server
@@ -199,9 +199,12 @@ pub fn add_server(guild: u64) -> Result<()> {
 		//creates the necessary files
 		create_file(guild, "voting_channels")?; //list of voting channels
 		create_file(guild, "speaker_roles")?;
-		copy_file(guild, "yeas");
-		copy_file(guild, "nays");
-		copy_file(guild, "abst");
+		create_file(guild, "yeas")?;
+		create_file(guild, "nays")?;
+		create_file(guild, "abst")?;
+		write_to_file(guild_file(guild, "yeas"), String::from("aye\nyea\nyes\nyeah"))?;
+		write_to_file(guild_file(guild, "nays"), String::from("nea\nnay\nno"))?;
+		write_to_file(guild_file(guild, "abst"), String::from("abs\nabstain\nabst"))?;
 	}
 
 	Ok(())

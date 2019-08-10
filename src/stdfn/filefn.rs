@@ -92,7 +92,7 @@ pub fn copy_file(id: u64, file: &str) {
 
 #[cfg(target_os="windows")]
 pub fn copy_file(id: u64, file: &str) {
-	Command::new("xcopy").arg(&format!("files/{}.txt", file))
+	Command::new("copy").arg(&format!("files/{}.txt", file))
                         .arg(&format!("data/{}/{}.txt", id, file))
                         .status().unwrap();
 }
