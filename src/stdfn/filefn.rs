@@ -49,7 +49,7 @@ pub fn guild_file(id: u64, file: &str) -> String {
 }
 
 pub fn voting_channel_file(guild: u64, channel: u64, file: &str) -> String {
-	format!("data/{}/voting_channels/{}/{}.txt", guild, channel, file)
+	format!("data/{}/votes/{}/{}.txt", guild, channel, file)
 }
 
 pub fn make_dir(path: String) -> Result<()> {

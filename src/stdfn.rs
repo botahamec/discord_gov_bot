@@ -117,7 +117,7 @@ pub fn start_vote_command(ctx: &mut Context, msg: &Message, args: Args) -> Resul
 	};
 	let channel_id = msg.channel_id.0;
 
-	write_to_file(voting_channel_file(guild_id, channel_id, "vote"), String::from(vote))?;
+	write_to_file(voting_channel_file(guild_id, channel_id, "bill"), String::from(vote))?;
 	if let Err(e) = msg.channel_id.say(&ctx.http, &format!("Voting has started on {}", vote)) {
 		println!("Couldn't send message, \n {}", e);
 	};
@@ -142,6 +142,7 @@ pub fn set_url_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<(
 }
 
 pub fn vote_command(ctx: &mut Context, msg: &Message) -> Result<()> {
+
 	let guild_id = match msg.guild_id {
 		Some(i) => i.0,
 		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
@@ -162,6 +163,7 @@ pub fn vote_command(ctx: &mut Context, msg: &Message) -> Result<()> {
 	};
 
 	let report = format!("{}-{}-{}", yeas, nays, abst);
+	println!("{}", report);
 	if let Err(e) = msg.channel_id.say(&ctx.http, &report) {
 		println!("Couldn't send message, \n {}", e);
 	};

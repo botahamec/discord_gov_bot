@@ -80,6 +80,7 @@ pub fn set_url(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 
 // REPORTING
 
+#[command]
 pub fn vote(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
 	vote_command(ctx, msg)?;
 	Ok(())
@@ -108,7 +109,7 @@ group!({
 group!({
 	name: "reporting",
 	options: {},
-	commands: []
+	commands: [vote]
 });
 
 pub struct Handler;
