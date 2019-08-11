@@ -201,12 +201,9 @@ pub fn add_server(guild: u64) -> Result<()> {
 		//creates the necessary files
 		create_file(guild, "voting_channels")?; //list of voting channels
 		create_file(guild, "speaker_roles")?;
-		create_file(guild, "yeas")?;
-		create_file(guild, "nays")?;
-		create_file(guild, "abst")?;
-		write_to_file(guild_file(guild, "yeas"), String::from("aye\nyea\nyes\nyeah"))?;
-		write_to_file(guild_file(guild, "nays"), String::from("nea\nnay\nno"))?;
-		write_to_file(guild_file(guild, "abst"), String::from("abs\nabstain\nabst"))?;
+		copy_file(guild, "yeas")?;
+		copy_file(guild, "nays")?;
+		copy_file(guild, "abst")?;
 	}
 
 	Ok(())

@@ -17,10 +17,10 @@ debug-assertions = true #assert!() is allowed
 
 # The release profile, used for `cargo build --release`
 [profile.release]
-opt-level = 3            #optimization level
-debug = false            #enables debug symbols
-lto = true               #link time optimization
-debug-assertions = false #assert!() is allowed
+opt-level = 3
+debug = false
+lto = true
+debug-assertions = false
 
 [dependencies]
 serenity = "0.6.3"
