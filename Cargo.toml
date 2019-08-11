@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["botahamec"]
 edition = "2018"
 publish = false
+build = "build.rs"
 description = "A bot to simulate and handle the functions of a mock government"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

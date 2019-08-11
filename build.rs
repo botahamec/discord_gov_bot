@@ -1,22 +1,41 @@
-use std::process::Command;
-use std::env;
+use std::fs::File;
+use std::fs::DirBuilder;
+use std::fs;
+use std::io::Result;
+use std::io::Read;
 
-#[cfg(target_os="linux")]
-fn copy(out_dir: String) {
-	Command::new("cp").arg(&format!("src/files"))
-                        .arg(&format!("{}/files", out_dir))
-                        .status().unwrap();
+///returns a string from a file
+fn str_from_file(path: String) -> Result<String> {
+	let mut file = File::open(path)?;
+	let mut string = String::new();
+	file.read_to_string(&mut string)?;
+	Ok(string)
 }
 
-#[cfg(target_os="windows")]
-fn copy(out_dir: String) {
-	Command::new("xcopy").arg(&format!("src/files"))
-                        .arg(&format!("{}/files", out_dir))
-                        .status().unwrap();
+fn copy_file(out_dir: &str, file: &str) -> Result<()> {
+	let text = str_from_file(format!("src/files/{}", file))?;
+	fs::write(format!("{}/files/{}", out_dir, file), text)?;
+	Ok(())
 }
 
-fn main() {
-    let out_dir = env::var("OUT_DIR").unwrap(); //the directory the project is being exported to
-    println!("{}", out_dir);
-    copy(out_dir);
+///creates a general directory
+pub fn make_dir(path: &str) -> Result<()> {
+	let dir = DirBuilder::new();
+	dir.create(path)
+}
+
+fn main() -> Result<()> {
+    match make_dir("target/debug/data") {
+        Ok(_t) => _t,
+        Err(_e) => print!("")
+    };
+    match make_dir("target/debug/files") {
+        Ok(_t) => _t,
+        Err(_e) => print!("")
+    };
+    copy_file("target/debug", "yeas.txt")?;
+    copy_file("target/debug", "nays.txt")?;
+    copy_file("target/debug", "abst.txt")?;
+    copy_file("target/debug", ".key")?;
+    Ok(())
 }
