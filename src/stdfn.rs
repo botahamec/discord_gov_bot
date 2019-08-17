@@ -190,20 +190,14 @@ pub fn vote_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> Resul
 		Ok(i) => i,
 		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
 	};
-	let novs = match vec_from_file(voting_channel_file(guild_id, channel_id, "novs")) {
-		Ok(i) => i,
-		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
-	};
 
 	let mut yeas_str = yeas.join("\n");
 	let mut nays_str = nays.join("\n");
 	let mut abst_str = abst.join("\n");
-	let mut novs_str = novs.join("\n");
 
 	if yeas.len() == 0 {yeas_str = String::from("N/A");}
 	if nays.len() == 0 {nays_str = String::from("N/A");}
 	if abst.len() == 0 {abst_str = String::from("N/A");}
-	if novs.len() == 0 {novs_str = String::from("N/A");}
 
 	let msg = msg.channel_id.send_message(&ctx.http, |m| {
 		m.content("");
@@ -215,8 +209,44 @@ pub fn vote_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> Resul
 				(format!("Yeas - {}", yeas.len()), yeas_str, true),
 				(format!("Nays - {}", nays.len()), nays_str, true),
 				(format!("Abstains - {}", abst.len()), abst_str, true),
-				(format!("Not Voting - {}", novs.len()), novs_str, true)
 			]);
+			e.footer(|f| {
+				f.text("Consider supporting Botahamec by donating either to this project or Patreon");
+				f
+			});
+			e
+		});
+		m
+	});
+
+	if let Err(why) = msg {
+    	println!("Error sending message: {:?}", why);
+	}
+
+	Ok(())
+}
+
+pub fn not_voted_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
+	let guild_id = match msg.guild_id {
+		Some(i) => i.0,
+		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
+	};
+	let channel_id = channel_from_abbr(guild_id, String::from(args.rest()))?;
+
+	let novs = match vec_from_file(voting_channel_file(guild_id, channel_id, "novs")) {
+		Ok(i) => i,
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+	let mut novs_str = novs.join("\n");
+	if novs.len() == 0 {novs_str = String::from("N/A");}
+
+	let msg = msg.channel_id.send_message(&ctx.http, |m| {
+		m.content("");
+		m.embed(|e| {
+			e.title(str_from_file(voting_channel_file(guild_id, channel_id, "bill")).unwrap());
+			e.description(str_from_file(voting_channel_file(guild_id, channel_id, "title")).unwrap());
+			e.url(str_from_file(voting_channel_file(guild_id, channel_id, "url")).unwrap());
+			e.fields(vec![(format!("Not Voting - {}", novs.len()), novs_str, true)]);
 			e.footer(|f| {
 				f.text("Consider supporting Botahamec by donating either to this project or Patreon");
 				f

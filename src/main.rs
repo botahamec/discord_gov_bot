@@ -86,6 +86,12 @@ pub fn votes(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 	Ok(())
 }
 
+#[command]
+pub fn not_voted(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	not_voted_embed_command(ctx, msg, args)?;
+	Ok(())
+}
+
 //GROUPS
 
 group!({
@@ -109,7 +115,7 @@ group!({
 group!({
 	name: "reporting",
 	options: {},
-	commands: [votes]
+	commands: [votes, not_voted]
 });
 
 pub struct Handler;
