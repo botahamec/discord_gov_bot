@@ -64,6 +64,12 @@ pub fn set_abbr(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 	Ok(())
 }
 
+#[command]
+pub fn set_role(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	set_role_command(ctx, msg, args)?;
+	Ok(())
+}
+
 // SPEAKER
 
 #[command]
@@ -103,7 +109,7 @@ group!({
 group!({
 	name: "channels",
 	options: {},
-	commands: [voting_channel, set_title, set_abbr],
+	commands: [voting_channel, set_title, set_abbr, set_role],
 });
 
 group!({

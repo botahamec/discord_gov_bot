@@ -66,6 +66,7 @@ pub fn add_voting_channel_command(ctx: &mut Context, msg: &Message) -> Result<()
 	create_vote_channel_file(guild_id, channel_id, "bill")?;
 	create_vote_channel_file(guild_id, channel_id, "url")?;
 	create_vote_channel_file(guild_id, channel_id, "title")?;
+	create_vote_channel_file(guild_id, channel_id, "role")?;
 
 	add_to_file(guild_file(guild_id, "voting_channels"), format!("{}", channel_id))?; //add to list of voting channels
 
@@ -105,6 +106,39 @@ pub fn set_abbr_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<
 		println!("Couldn't send message, \n {}", e);
 	};
 	Ok(())
+}
+
+pub fn set_role_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
+	let potential_role_name = args.rest();
+
+	let guild_id = match msg.guild_id {
+		Some(i) => i.0,
+		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
+	};
+	let channel_id = msg.channel_id.0;
+	
+    if let Some(guild) = msg.guild(&ctx.cache) {
+        // `role_by_name()` allows us to attempt attaining a reference to a role
+        // via its name.
+        if let Some(role) = guild.read().role_by_name(&potential_role_name) {
+			add_to_file(voting_channel_file(guild_id, channel_id, "role"), format!("{}", role.id.0))?;
+            if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The role, {} is now a member of this channel", potential_role_name)) {
+				println!("Couldn't send message, \n {}", e);
+			}
+            return Ok(());
+        }
+
+		//if let Some(role) = guild.read().roles.keys().map(|r| r.0) {
+		//	msg.channel_id.say(&ctx.http, &format!("The role, <@{}> now has speaker permissions", potential_role_name))?;
+		//	return Ok(())
+		//}
+    }
+
+    if let Err(why) = msg.channel_id.say(&ctx.http, format!("Could not find role named: {:?}", potential_role_name)) {
+        println!("Error sending message: {:?}", why);
+    }
+
+    Ok(())
 }
 
 pub fn start_vote_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
@@ -170,7 +204,6 @@ pub fn vote_report(ctx: &mut Context, msg: &Message) -> Result<()> {
 	Ok(())
 }
 
-//TODO: use an abbreviation instead of the current channel
 pub fn vote_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
 	let guild_id = match msg.guild_id {
 		Some(i) => i.0,
