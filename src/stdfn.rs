@@ -208,8 +208,8 @@ pub fn vote_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> Resul
 	let msg = msg.channel_id.send_message(&ctx.http, |m| {
 		m.content("");
 		m.embed(|e| {
-			e.title(str_from_file(voting_channel_file(guild_id, channel_id, "title")).unwrap());
-			e.description(str_from_file(voting_channel_file(guild_id, channel_id, "bill")).unwrap());
+			e.title(str_from_file(voting_channel_file(guild_id, channel_id, "bill")).unwrap());
+			e.description(str_from_file(voting_channel_file(guild_id, channel_id, "title")).unwrap());
 			e.url(str_from_file(voting_channel_file(guild_id, channel_id, "url")).unwrap());
 			e.fields(vec![
 				(format!("Yeas - {}", yeas.len()), yeas_str, true),
