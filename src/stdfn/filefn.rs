@@ -3,16 +3,18 @@ use std::{
 	fs,
 	fs::{
 		File,
-		DirBuilder
+		DirBuilder,
 	},
 	io::{
 		prelude::*,
 		Result,
+		Error,
+		ErrorKind
 	},
 };
 
 ///returns a string from a file
-fn str_from_file(path: String) -> Result<String> {
+pub fn str_from_file(path: String) -> Result<String> {
 	let mut file = File::open(path)?;
 	let mut string = String::new();
 	file.read_to_string(&mut string)?;
@@ -40,12 +42,12 @@ pub fn add_to_file(path: String, string: String) -> Result<()> {
 
 ///returns a path to the file in the database associated with a given guild id
 pub fn guild_file(id: u64, file: &str) -> String {
-	format!("data/{}/{}.txt", id, file)
+	format!("data/servers/{}/{}.txt", id, file)
 }
 
 ///returns a path to the file in the database for the given channel id
 pub fn voting_channel_file(guild: u64, channel: u64, file: &str) -> String {
-	format!("data/{}/votes/{}/{}.txt", guild, channel, file)
+	format!("data/servers/{}/votes/{}/{}.txt", guild, channel, file)
 }
 
 ///creates a general directory
@@ -56,18 +58,18 @@ pub fn make_dir(path: String) -> Result<()> {
 
 ///creates a folder at the path specified for the given guild
 pub fn create_dir(id: u64, path: String) -> Result<()> {
-	make_dir(format!("data/{}/{}", id, path))
+	make_dir(format!("data/servers/{}/{}", id, path))
 }
 
 ///creates a file for the guild specified with the given path
 pub fn create_file(id: u64, file: &str) -> Result<()> {
-	File::create(format!("data/{}/{}.txt", id, file))?;
+	File::create(format!("data/servers/{}/{}.txt", id, file))?;
 	Ok(())
 }
 
 ///creates a file for the guild specified with the given path
 pub fn create_vote_channel_file(guild: u64, channel: u64, file: &str) -> Result<()> {
-	File::create(format!("data/{}/votes/{}/{}.txt", guild, channel, file))?;
+	File::create(format!("data/servers/{}/votes/{}/{}.txt", guild, channel, file))?;
 	Ok(())
 }
 
@@ -80,4 +82,18 @@ pub fn copy_file(id: u64, file: &str) -> Result<()> {
 	let text = str_from_file(format!("files/{}.txt", file))?;
 	write_to_file(guild_file(id, file), text)?;
 	Ok(())
+}
+
+pub fn channel_from_abbr(guild: u64, abbr: String) -> Result<u64> {
+	let paths = fs::read_dir(format!("data/servers/{}/votes", guild))?;
+	for path in paths {
+		let channel_str = format!("{}", path.unwrap().path().file_name().unwrap().to_str().unwrap());
+		println!("{}", channel_str);
+		let test_abbr = str_from_file(format!("data/servers/{}/votes/{}/abbr.txt", guild, channel_str))?;
+		if test_abbr == abbr {
+			let channel_id = channel_str.parse::<u64>().unwrap();
+			return Ok(channel_id);
+		}
+	}
+	Err(Error::new(ErrorKind::InvalidInput, "No channel found with this abbreviation"))
 }

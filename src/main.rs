@@ -81,8 +81,8 @@ pub fn set_url(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 // REPORTING
 
 #[command]
-pub fn vote(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
-	vote_command(ctx, msg)?;
+pub fn votes(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	vote_embed_command(ctx, msg, args)?;
 	Ok(())
 }
 
@@ -109,7 +109,7 @@ group!({
 group!({
 	name: "reporting",
 	options: {},
-	commands: [vote]
+	commands: [votes]
 });
 
 pub struct Handler;
@@ -141,7 +141,7 @@ fn main() {
 
 	// Get key from an external file
 	let mut DISCORD_TOKEN = String::new();
-	let mut key_file = File::open(".key").unwrap();
+	let mut key_file = File::open("files/.key").unwrap();
 	key_file.read_to_string(&mut DISCORD_TOKEN).unwrap();
 
 	// Login with the key
