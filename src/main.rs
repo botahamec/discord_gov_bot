@@ -81,7 +81,7 @@ pub fn set_url(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 // REPORTING
 
 #[command]
-pub fn votes(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+pub fn voted(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 	vote_embed_command(ctx, msg, args)?;
 	Ok(())
 }
@@ -115,7 +115,7 @@ group!({
 group!({
 	name: "reporting",
 	options: {},
-	commands: [votes, not_voted]
+	commands: [voted, not_voted]
 });
 
 pub struct Handler;
