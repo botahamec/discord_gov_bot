@@ -40,6 +40,17 @@ pub fn add_to_file(path: String, string: String) -> Result<()> {
 	fs::write(path.clone(), text)
 }
 
+///removes an item from a file
+pub fn remove_from_file(path: String, string: String) -> Result<()> {
+	let mut list = vec_from_file(path.clone())?;
+	for item in 0..list.len() {
+		if list[item] == string {list.remove(item);}
+	}
+	let text : String = list.join("\n");
+	write_to_file(path.clone(), text)?;
+	Ok(())
+}
+
 ///returns a path to the file in the database associated with a given guild id
 pub fn guild_file(id: u64, file: &str) -> String {
 	format!("data/servers/{}/{}.txt", id, file)
