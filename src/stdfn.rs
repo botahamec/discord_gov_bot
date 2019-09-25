@@ -66,6 +66,7 @@ pub fn add_voting_channel_command(ctx: &mut Context, msg: &Message) -> Result<()
 	create_vote_channel_file(guild_id, channel_id, "bill")?;
 	create_vote_channel_file(guild_id, channel_id, "url")?;
 	create_vote_channel_file(guild_id, channel_id, "title")?;
+	create_vote_channel_file(guild_id, channel_id, "role")?;
 
 	add_to_file(guild_file(guild_id, "voting_channels"), format!("{}", channel_id))?; //add to list of voting channels
 
@@ -107,6 +108,39 @@ pub fn set_abbr_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<
 	Ok(())
 }
 
+pub fn set_role_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
+	let potential_role_name = args.rest();
+
+	let guild_id = match msg.guild_id {
+		Some(i) => i.0,
+		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
+	};
+	let channel_id = msg.channel_id.0;
+	
+    if let Some(guild) = msg.guild(&ctx.cache) {
+        // `role_by_name()` allows us to attempt attaining a reference to a role
+        // via its name.
+        if let Some(role) = guild.read().role_by_name(&potential_role_name) {
+			add_to_file(voting_channel_file(guild_id, channel_id, "role"), format!("{}", role.id.0))?;
+            if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The role, {} is now a member of this channel", potential_role_name)) {
+				println!("Couldn't send message, \n {}", e);
+			}
+            return Ok(());
+        }
+
+		//if let Some(role) = guild.read().roles.keys().map(|r| r.0) {
+		//	msg.channel_id.say(&ctx.http, &format!("The role, <@{}> now has speaker permissions", potential_role_name))?;
+		//	return Ok(())
+		//}
+    }
+
+    if let Err(why) = msg.channel_id.say(&ctx.http, format!("Could not find role named: {:?}", potential_role_name)) {
+        println!("Error sending message: {:?}", why);
+    }
+
+    Ok(())
+}
+
 pub fn start_vote_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
 
 	let vote = args.rest();
@@ -141,7 +175,7 @@ pub fn set_url_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<(
 	Ok(())
 }
 
-pub fn vote_command(ctx: &mut Context, msg: &Message) -> Result<()> {
+pub fn vote_report(ctx: &mut Context, msg: &Message) -> Result<()> {
 
 	let guild_id = match msg.guild_id {
 		Some(i) => i.0,
@@ -170,6 +204,98 @@ pub fn vote_command(ctx: &mut Context, msg: &Message) -> Result<()> {
 	Ok(())
 }
 
+pub fn vote_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
+	let guild_id = match msg.guild_id {
+		Some(i) => i.0,
+		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
+	};
+	let channel_id = channel_from_abbr(guild_id, String::from(args.rest()))?;
+
+	let yeas = match vec_from_file(voting_channel_file(guild_id, channel_id, "yeas")) {
+		Ok(i) => i,
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+	let nays = match vec_from_file(voting_channel_file(guild_id, channel_id, "nays")) {
+		Ok(i) => i,
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+	let abst = match vec_from_file(voting_channel_file(guild_id, channel_id, "abst")) {
+		Ok(i) => i,
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+
+	let mut yeas_str = yeas.join("\n");
+	let mut nays_str = nays.join("\n");
+	let mut abst_str = abst.join("\n");
+
+	if yeas.len() == 0 {yeas_str = String::from("N/A");}
+	if nays.len() == 0 {nays_str = String::from("N/A");}
+	if abst.len() == 0 {abst_str = String::from("N/A");}
+
+	let msg = msg.channel_id.send_message(&ctx.http, |m| {
+		m.content("");
+		m.embed(|e| {
+			e.title(str_from_file(voting_channel_file(guild_id, channel_id, "bill")).unwrap());
+			e.description(str_from_file(voting_channel_file(guild_id, channel_id, "title")).unwrap());
+			e.url(str_from_file(voting_channel_file(guild_id, channel_id, "url")).unwrap());
+			e.fields(vec![
+				(format!("Yeas - {}", yeas.len()), yeas_str, true),
+				(format!("Nays - {}", nays.len()), nays_str, true),
+				(format!("Abstains - {}", abst.len()), abst_str, true),
+			]);
+			e.footer(|f| {
+				f.text("Consider supporting Botahamec by donating either to this project or Patreon");
+				f
+			});
+			e
+		});
+		m
+	});
+
+	if let Err(why) = msg {
+    	println!("Error sending message: {:?}", why);
+	}
+
+	Ok(())
+}
+
+pub fn not_voted_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
+	let guild_id = match msg.guild_id {
+		Some(i) => i.0,
+		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
+	};
+	let channel_id = channel_from_abbr(guild_id, String::from(args.rest()))?;
+
+	let novs = match vec_from_file(voting_channel_file(guild_id, channel_id, "novs")) {
+		Ok(i) => i,
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+	let mut novs_str = novs.join("\n");
+	if novs.len() == 0 {novs_str = String::from("N/A");}
+
+	let msg = msg.channel_id.send_message(&ctx.http, |m| {
+		m.content("");
+		m.embed(|e| {
+			e.title(str_from_file(voting_channel_file(guild_id, channel_id, "bill")).unwrap());
+			e.description(str_from_file(voting_channel_file(guild_id, channel_id, "title")).unwrap());
+			e.url(str_from_file(voting_channel_file(guild_id, channel_id, "url")).unwrap());
+			e.fields(vec![(format!("Not Voting - {}", novs.len()), novs_str, true)]);
+			e.footer(|f| {
+				f.text("Consider supporting Botahamec by donating either to this project or Patreon");
+				f
+			});
+			e
+		});
+		m
+	});
+
+	if let Err(why) = msg {
+    	println!("Error sending message: {:?}", why);
+	}
+
+	Ok(())
+}
+
 ///looks at a message to see if it a vote and processes the vote if necessary
 //TODO: add logic to handle the vote
 pub fn check_msg_for_votes(msg: Message) -> Result<()> {
@@ -193,11 +319,14 @@ pub fn check_msg_for_votes(msg: Message) -> Result<()> {
 pub fn add_server(guild: u64) -> Result<()> {
 
 	if !file_contains(String::from("data/servers.txt"), format!("{}", guild)).unwrap() {
+<<<<<<< HEAD
 
 		add_to_file(String::from("data/servers.txt"), format!("{}", guild))?;
+=======
+>>>>>>> 733463d0cb58e8f83bb7bdfb63b1dc0b6ecd6e0e
 		
 		//sets up directory structure
-		make_dir(format!("data/{}", guild))?; //creates the folder for the server
+		make_dir(format!("data/servers/{}", guild))?; //creates the folder for the server
 		create_dir(guild, String::from("votes"))?; //information on current votes
 
 		//creates the necessary files
@@ -206,6 +335,8 @@ pub fn add_server(guild: u64) -> Result<()> {
 		copy_file(guild, "yeas")?;
 		copy_file(guild, "nays")?;
 		copy_file(guild, "abst")?;
+
+		add_to_file(String::from("data/servers.txt"), format!("{}", guild))?;
 	}
 
 	Ok(())

@@ -64,6 +64,12 @@ pub fn set_abbr(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 	Ok(())
 }
 
+#[command]
+pub fn set_role(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	set_role_command(ctx, msg, args)?;
+	Ok(())
+}
+
 // SPEAKER
 
 #[command]
@@ -81,8 +87,14 @@ pub fn set_url(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 // REPORTING
 
 #[command]
-pub fn vote(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
-	vote_command(ctx, msg)?;
+pub fn voted(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	vote_embed_command(ctx, msg, args)?;
+	Ok(())
+}
+
+#[command]
+pub fn not_voted(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	not_voted_embed_command(ctx, msg, args)?;
 	Ok(())
 }
 
@@ -97,7 +109,7 @@ group!({
 group!({
 	name: "channels",
 	options: {},
-	commands: [voting_channel, set_title, set_abbr],
+	commands: [voting_channel, set_title, set_abbr, set_role],
 });
 
 group!({
@@ -109,7 +121,7 @@ group!({
 group!({
 	name: "reporting",
 	options: {},
-	commands: [vote]
+	commands: [voted, not_voted]
 });
 
 pub struct Handler;
@@ -141,7 +153,7 @@ fn main() {
 
 	// Get key from an external file
 	let mut DISCORD_TOKEN = String::new();
-	let mut key_file = File::open(".key").unwrap();
+	let mut key_file = File::open("files/.key").unwrap();
 	key_file.read_to_string(&mut DISCORD_TOKEN).unwrap();
 
 	// Login with the key

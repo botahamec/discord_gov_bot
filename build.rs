@@ -19,9 +19,14 @@ fn copy_file(out_dir: &str, file: &str) -> Result<()> {
 }
 
 ///creates a general directory
-pub fn make_dir(path: &str) -> Result<()> {
+fn make_dir(path: &str) -> Result<()> {
 	let dir = DirBuilder::new();
 	dir.create(path)
+}
+
+fn make_file(path: &str) -> Result<()> {
+    File::create(path)?;
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -29,7 +34,15 @@ fn main() -> Result<()> {
         Ok(_t) => _t,
         Err(_e) => print!("")
     };
+    match make_dir("target/debug/data/servers") {
+        Ok(_t) => _t,
+        Err(_e) => print!("")
+    }
     match make_dir("target/debug/files") {
+        Ok(_t) => _t,
+        Err(_e) => print!("")
+    };
+    match make_file("target/debug/data/servers.txt") {
         Ok(_t) => _t,
         Err(_e) => print!("")
     };
