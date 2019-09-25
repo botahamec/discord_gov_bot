@@ -98,6 +98,26 @@ pub fn not_voted(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult 
 	Ok(())
 }
 
+// VOTING
+
+#[command]
+pub fn yea(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+	yea_command(ctx, msg)?;
+	Ok(())
+}
+
+#[command]
+pub fn nay(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+	nay_command(ctx, msg)?;
+	Ok(())
+}
+
+#[command]
+pub fn abstain(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+	abs_command(ctx, msg)?;
+	Ok(())
+}
+
 //GROUPS
 
 group!({
@@ -124,6 +144,13 @@ group!({
 	commands: [voted, not_voted]
 });
 
+//TODO: fix these commands
+group!({
+	name: "voting",
+	options: {},
+	commands: [yea, nay, abstain]
+});
+
 pub struct Handler;
 
 impl EventHandler for Handler {
@@ -131,11 +158,11 @@ impl EventHandler for Handler {
 	//message saying that the bot is online
 	fn ready(&self, _: Context, _ready: Ready) {println!("The government is now open!");}
 
-	fn message(&self, _ctx: Context, msg: Message) {
+	fn message(&self, ctx: Context, msg: Message) {
 
 		//checks for votes in voting channels
-		match check_msg_for_votes(msg) {
-			Ok(T) => T,
+		match check_msg_for_votes(msg.clone()) {
+			Ok(T) => {if T {vote_report(&ctx, &msg.clone());}},
 			Err(E) => println!("{}", E)
 		};
 	}
@@ -164,7 +191,8 @@ fn main() {
         .group(&ROLES_GROUP)
 		.group(&CHANNELS_GROUP)
 		.group(&SPEAKER_GROUP)
-		.group(&REPORTING_GROUP));
+		.group(&REPORTING_GROUP)
+		.group(&VOTING_GROUP));
 	
 	// start listening for events by starting a single shard
 	if let Err(why) = client.start() {

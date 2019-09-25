@@ -175,35 +175,6 @@ pub fn set_url_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<(
 	Ok(())
 }
 
-pub fn vote_report(ctx: &mut Context, msg: &Message) -> Result<()> {
-
-	let guild_id = match msg.guild_id {
-		Some(i) => i.0,
-		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
-	};
-	let channel_id = msg.channel_id.0;
-
-	let yeas = match vec_from_file(voting_channel_file(guild_id, channel_id, "yeas")) {
-		Ok(i) => i.len(),
-		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
-	};
-	let nays = match vec_from_file(voting_channel_file(guild_id, channel_id, "nays")) {
-		Ok(i) => i.len(),
-		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
-	};
-	let abst = match vec_from_file(voting_channel_file(guild_id, channel_id, "abst")) {
-		Ok(i) => i.len(),
-		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
-	};
-
-	let report = format!("{}-{}-{}", yeas, nays, abst);
-	println!("{}", report);
-	if let Err(e) = msg.channel_id.say(&ctx.http, &report) {
-		println!("Couldn't send message, \n {}", e);
-	};
-	Ok(())
-}
-
 pub fn vote_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
 	let guild_id = match msg.guild_id {
 		Some(i) => i.0,
@@ -296,21 +267,112 @@ pub fn not_voted_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> 
 	Ok(())
 }
 
+pub fn vote_report(ctx: &Context, msg: &Message) -> Result<()> {
+
+	let guild_id = match msg.guild_id {
+		Some(i) => i.0,
+		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
+	};
+	let channel_id = msg.channel_id.0;
+
+	let yeas = match vec_from_file(voting_channel_file(guild_id, channel_id, "yeas")) {
+		Ok(i) => i.len(),
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+	let nays = match vec_from_file(voting_channel_file(guild_id, channel_id, "nays")) {
+		Ok(i) => i.len(),
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+	let abst = match vec_from_file(voting_channel_file(guild_id, channel_id, "abst")) {
+		Ok(i) => i.len(),
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+
+	let report = format!("{}-{}-{}", yeas, nays, abst);
+	if let Err(e) = msg.channel_id.say(&ctx.http, &report) {
+		println!("Couldn't send message, \n {}", e);
+	};
+	Ok(())
+}
+
+pub fn vote_yea(name: String, channel: u64, guild: u64) -> Result<()> {
+	remove_from_file(voting_channel_file(guild, channel, "nays"), name.clone())?;
+	remove_from_file(voting_channel_file(guild, channel, "abst"), name.clone())?;
+	remove_from_file(voting_channel_file(guild, channel, "novs"), name.clone())?;
+	add_to_file(voting_channel_file(guild, channel, "yeas"), name.clone())?;
+	Ok(())
+}
+
+pub fn vote_nay(name: String, channel: u64, guild: u64) -> Result<()> {
+	remove_from_file(voting_channel_file(guild, channel, "yeas"), name.clone())?;
+	remove_from_file(voting_channel_file(guild, channel, "abst"), name.clone())?;
+	remove_from_file(voting_channel_file(guild, channel, "novs"), name.clone())?;
+	add_to_file(voting_channel_file(guild, channel, "nays"), name.clone())?;
+	Ok(())
+}
+
+pub fn vote_abs(name: String, channel: u64, guild: u64) -> Result<()> {
+	remove_from_file(voting_channel_file(guild, channel, "nays"), name.clone())?;
+	remove_from_file(voting_channel_file(guild, channel, "yeas"), name.clone())?;
+	remove_from_file(voting_channel_file(guild, channel, "novs"), name.clone())?;
+	add_to_file(voting_channel_file(guild, channel, "abst"), name.clone())?;
+	Ok(())
+}
+
+pub fn yea_command(ctx: &mut Context, msg: &Message) -> Result<()> {
+	let channel = msg.channel_id.0;
+	let guild = msg.guild_id.unwrap().0;
+	let name = msg.author.name.clone();
+	vote_yea(name, channel, guild)?;
+	vote_report(ctx, msg)?;
+	Ok(())
+}
+
+pub fn nay_command(ctx: &mut Context, msg: &Message) -> Result<()> {
+	let channel = msg.channel_id.0;
+	let guild = msg.guild_id.unwrap().0;
+	let name = msg.author.name.clone();
+	vote_nay(name, channel, guild)?;
+	vote_report(ctx, msg)?;
+	Ok(())
+}
+
+pub fn abs_command(ctx: &mut Context, msg: &Message) -> Result<()> {
+	let channel = msg.channel_id.0;
+	let guild = msg.guild_id.unwrap().0;
+	let name = msg.author.name.clone();
+	vote_abs(name, channel, guild)?;
+	vote_report(ctx, msg)?;
+	Ok(())
+}
+
 ///looks at a message to see if it a vote and processes the vote if necessary
-//TODO: add logic to handle the vote
-pub fn check_msg_for_votes(msg: Message) -> Result<()> {
+//TODO: add the vote report
+#[allow(unused_assignments)]
+pub fn check_msg_for_votes(msg: Message) -> Result<bool> {
 
 	let guild_id = msg.guild_id.unwrap().0;
+	let mut boolean : bool = false; //used to determine whether a vote was sent
 
 	//checks if the channel is a voting channel
 	if file_contains(guild_file(guild_id, "voting_channels"), format!("{}", msg.channel_id.0)).unwrap() {
 		let vote = msg.content;
-		if file_contains(guild_file(guild_id, "yeas"), vote.clone()).unwrap() {unimplemented!("Yea cast");}
-		if file_contains(guild_file(guild_id, "nays"), vote.clone()).unwrap() {unimplemented!("Nay cast");}
-		if file_contains(guild_file(guild_id, "abst"), vote.clone()).unwrap() {unimplemented!("Abstain!");}
+		if file_contains(guild_file(guild_id, "yeas"), vote.clone()).unwrap() {
+			println!("yea");
+			vote_yea(msg.author.name.clone(), msg.channel_id.0, guild_id)?;
+			boolean = true;
+		}
+		if file_contains(guild_file(guild_id, "nays"), vote.clone()).unwrap() {
+			vote_nay(msg.author.name.clone(), msg.channel_id.0, guild_id)?;
+			boolean = true;
+		}
+		if file_contains(guild_file(guild_id, "abst"), vote.clone()).unwrap() {
+			vote_abs(msg.author.name.clone(), msg.channel_id.0, guild_id)?;
+			boolean = true
+		}
 	}
 
-	Ok(())
+	Ok(boolean)
 }
 
 ///adds the data of a new server to the database
