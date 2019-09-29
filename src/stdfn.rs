@@ -5,6 +5,7 @@ mod filefn; use filefn::*;
 extern crate serenity;
 use serenity::{
 	model::channel::Message,
+	model::id::ChannelId,
 	prelude::Context,
 	framework::standard::{
 		CheckResult,
@@ -51,6 +52,39 @@ pub fn add_speaker_command(ctx: &mut Context, msg: &Message, args: Args) -> Resu
     Ok(())
 }
 
+pub fn set_role_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
+	let potential_role_name = args.rest();
+
+	let guild_id = match msg.guild_id {
+		Some(i) => i.0,
+		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
+	};
+	let channel_id = msg.channel_id.0;
+	
+    if let Some(guild) = msg.guild(&ctx.cache) {
+        // `role_by_name()` allows us to attempt attaining a reference to a role
+        // via its name.
+        if let Some(role) = guild.read().role_by_name(&potential_role_name) {
+			write_to_file(voting_channel_file(guild_id, channel_id, "role"), format!("{}", role.id.0))?;
+            if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The role, {} is now a member of this channel", potential_role_name)) {
+				println!("Couldn't send message, \n {}", e);
+			}
+            return Ok(());
+        }
+
+		//if let Some(role) = guild.read().roles.keys().map(|r| r.0) {
+		//	msg.channel_id.say(&ctx.http, &format!("The role, <@{}> now has speaker permissions", potential_role_name))?;
+		//	return Ok(())
+		//}
+    }
+
+    if let Err(why) = msg.channel_id.say(&ctx.http, format!("Could not find role named: {:?}", potential_role_name)) {
+        println!("Error sending message: {:?}", why);
+    }
+
+    Ok(())
+}
+
 pub fn add_voting_channel_command(ctx: &mut Context, msg: &Message) -> Result<()> {
 	
 	//find id's
@@ -72,6 +106,7 @@ pub fn add_voting_channel_command(ctx: &mut Context, msg: &Message) -> Result<()
 	create_vote_channel_file(guild_id, channel_id, "url")?;
 	create_vote_channel_file(guild_id, channel_id, "title")?;
 	create_vote_channel_file(guild_id, channel_id, "role")?;
+	create_vote_channel_file(guild_id, channel_id, "results")?;
 
 	add_to_file(guild_file(guild_id, "voting_channels"), format!("{}", channel_id))?; //add to list of voting channels
 
@@ -113,37 +148,29 @@ pub fn set_abbr_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<
 	Ok(())
 }
 
-pub fn set_role_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
-	let potential_role_name = args.rest();
-
+pub fn set_results_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
+	let new_results = args.rest();
 	let guild_id = match msg.guild_id {
 		Some(i) => i.0,
 		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
 	};
 	let channel_id = msg.channel_id.0;
-	
-    if let Some(guild) = msg.guild(&ctx.cache) {
-        // `role_by_name()` allows us to attempt attaining a reference to a role
-        // via its name.
-        if let Some(role) = guild.read().role_by_name(&potential_role_name) {
-			write_to_file(voting_channel_file(guild_id, channel_id, "role"), format!("{}", role.id.0))?;
-            if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The role, {} is now a member of this channel", potential_role_name)) {
+
+	match new_results.parse::<u64>() {
+		Ok(_i) => {
+			write_to_file(voting_channel_file(guild_id, channel_id, "results"), String::from(new_results))?;
+			if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The results of votes in this channel will be posted to <#{}>", new_results)) {
 				println!("Couldn't send message, \n {}", e);
-			}
-            return Ok(());
-        }
+			};
+		},
+		Err(_e) => {
+			if let Err(e) = msg.channel_id.say(&ctx.http, &format!("You must provide a channel id for which channel will be the results channel for this voting channel.")) {
+				println!("Couldn't send message, \n {}", e);
+			};
+		}
+	};
 
-		//if let Some(role) = guild.read().roles.keys().map(|r| r.0) {
-		//	msg.channel_id.say(&ctx.http, &format!("The role, <@{}> now has speaker permissions", potential_role_name))?;
-		//	return Ok(())
-		//}
-    }
-
-    if let Err(why) = msg.channel_id.say(&ctx.http, format!("Could not find role named: {:?}", potential_role_name)) {
-        println!("Error sending message: {:?}", why);
-    }
-
-    Ok(())
+	Ok(())
 }
 
 pub fn start_vote_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<()> {
@@ -164,7 +191,7 @@ pub fn start_vote_command(ctx: &mut Context, msg: &Message, args: Args) -> Resul
 	for member in members.values() {
 		if member.roles.iter().any(|r| role_id == format!("{}", r.0)) {
 			let user = &member.user.read();
-			add_to_file(voting_channel_file(guild_id, channel_id, "novs"), user.name.clone());
+			add_to_file(voting_channel_file(guild_id, channel_id, "novs"), user.name.clone())?;
 		}
 	}
 
@@ -189,6 +216,75 @@ pub fn set_url_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<(
 	if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The URL has changed")) {
 		println!("Couldn't send message, \n {}", e);
 	};
+	Ok(())
+}
+
+pub fn end_vote_command(ctx: &mut Context, msg: &Message) -> Result<()> {
+
+	let guild_id = match msg.guild_id {
+		Some(i) => i.0,
+		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
+	};
+	let channel_id = msg.channel_id.0;
+
+	let yeas = match vec_from_file(voting_channel_file(guild_id, channel_id, "yeas")) {
+		Ok(i) => i,
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+	let nays = match vec_from_file(voting_channel_file(guild_id, channel_id, "nays")) {
+		Ok(i) => i,
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+	let abst = match vec_from_file(voting_channel_file(guild_id, channel_id, "abst")) {
+		Ok(i) => i,
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+	let novs = match vec_from_file(voting_channel_file(guild_id, channel_id, "novs")) {
+		Ok(i) => i,
+		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
+	};
+
+	let mut yeas_str = yeas.join("\n");
+	let mut nays_str = nays.join("\n");
+	let mut abst_str = abst.join("\n");
+	let mut novs_str = novs.join("\n");
+
+	if yeas.len() == 0 {yeas_str = String::from("N/A");}
+	if nays.len() == 0 {nays_str = String::from("N/A");}
+	if abst.len() == 0 {abst_str = String::from("N/A");}
+	if novs.len() == 0 {novs_str = String::from("N/A");}
+
+	let results_str = str_from_file(voting_channel_file(guild_id, channel_id, "results"))?;
+	let results = ChannelId::from(results_str.parse::<u64>().unwrap());
+
+	let _msg = results.send_message(&ctx.http, |m| {
+		m.content("");
+		m.embed(|e| {
+			e.title(str_from_file(voting_channel_file(guild_id, channel_id, "bill")).unwrap());
+			e.description(str_from_file(voting_channel_file(guild_id, channel_id, "title")).unwrap());
+			e.url(str_from_file(voting_channel_file(guild_id, channel_id, "url")).unwrap());
+			e.fields(vec![
+				(format!("Yeas - {}", yeas.len()), yeas_str, true),
+				(format!("Nays - {}", nays.len()), nays_str, true),
+				(format!("Abstains - {}", abst.len()), abst_str, true),
+				(format!("Not Voting - {}", novs.len()), novs_str, true)
+			]);
+			e.footer(|f| {
+				f.text("Consider supporting Botahamec by donating either to this project or Patreon");
+				f
+			});
+			e
+		});
+		m
+	});
+
+	write_to_file(voting_channel_file(guild_id, channel_id, "yeas"), String::from(""))?;
+	write_to_file(voting_channel_file(guild_id, channel_id, "nays"), String::from(""))?;
+	write_to_file(voting_channel_file(guild_id, channel_id, "abst"), String::from(""))?;
+	write_to_file(voting_channel_file(guild_id, channel_id, "novs"), String::from(""))?;
+	write_to_file(voting_channel_file(guild_id, channel_id, "bill"), String::from(""))?;
+	write_to_file(voting_channel_file(guild_id, channel_id, "url"), String::from(""))?;
+
 	Ok(())
 }
 

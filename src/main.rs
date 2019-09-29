@@ -44,6 +44,12 @@ pub fn add_speaker(ctx: &mut Context, msg: &Message, args: Args) -> CommandResul
     Ok(())
 }
 
+#[command]
+pub fn set_role(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	set_role_command(ctx, msg, args)?;
+	Ok(())
+}
+
 //CHANNELS
 
 #[command]
@@ -65,8 +71,8 @@ pub fn set_abbr(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 }
 
 #[command]
-pub fn set_role(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
-	set_role_command(ctx, msg, args)?;
+pub fn set_results(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	set_results_command(ctx, msg, args)?;
 	Ok(())
 }
 
@@ -81,6 +87,12 @@ pub fn start_vote(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult
 #[command]
 pub fn set_url(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 	set_url_command(ctx, msg, args)?;
+	Ok(())
+}
+
+#[command]
+pub fn end_vote(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+	end_vote_command(ctx, msg)?;
 	Ok(())
 }
 
@@ -121,17 +133,19 @@ pub fn abstain(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
 //GROUPS
 
 group!({
-    name: "admin",
+    name: "roles",
     options: {
 		checks: [Admin]
 	},
-    commands: [add_speaker],
+    commands: [add_speaker, set_role],
 });
 
 group!({
 	name: "channels",
-	options: {},
-	commands: [voting_channel, set_title, set_abbr, set_role],
+	options: {
+		checks: [Admin]
+	},
+	commands: [voting_channel, set_title, set_abbr, set_results],
 });
 
 group!({
@@ -139,7 +153,7 @@ group!({
 	options: {
 		checks: [Speaker]
 	},
-	commands: [start_vote, set_url]
+	commands: [start_vote, set_url, end_vote]
 });
 
 group!({
@@ -191,7 +205,7 @@ fn main() {
 		.expect("Error creating client");
 	client.with_framework(StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
-        .group(&ADMIN_GROUP)
+        .group(&ROLES_GROUP)
 		.group(&CHANNELS_GROUP)
 		.group(&SPEAKER_GROUP)
 		.group(&REPORTING_GROUP)
