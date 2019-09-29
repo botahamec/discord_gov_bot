@@ -121,8 +121,10 @@ pub fn abstain(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
 //GROUPS
 
 group!({
-    name: "roles",
-    options: {},
+    name: "admin",
+    options: {
+		checks: [Admin]
+	},
     commands: [add_speaker],
 });
 
@@ -134,7 +136,9 @@ group!({
 
 group!({
 	name: "speaker",
-	options: {},
+	options: {
+		checks: [Speaker]
+	},
 	commands: [start_vote, set_url]
 });
 
@@ -144,7 +148,6 @@ group!({
 	commands: [voted, not_voted]
 });
 
-//TODO: fix these commands
 group!({
 	name: "voting",
 	options: {},
@@ -188,7 +191,7 @@ fn main() {
 		.expect("Error creating client");
 	client.with_framework(StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
-        .group(&ROLES_GROUP)
+        .group(&ADMIN_GROUP)
 		.group(&CHANNELS_GROUP)
 		.group(&SPEAKER_GROUP)
 		.group(&REPORTING_GROUP)

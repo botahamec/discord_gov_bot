@@ -6,7 +6,12 @@ extern crate serenity;
 use serenity::{
 	model::channel::Message,
 	prelude::Context,
-	framework::standard::Args,
+	framework::standard::{
+		CheckResult,
+		CommandOptions,
+		Args,
+		macros::check
+	},
 };
 
 //stdlib imports
@@ -121,7 +126,7 @@ pub fn set_role_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<
         // `role_by_name()` allows us to attempt attaining a reference to a role
         // via its name.
         if let Some(role) = guild.read().role_by_name(&potential_role_name) {
-			add_to_file(voting_channel_file(guild_id, channel_id, "role"), format!("{}", role.id.0))?;
+			write_to_file(voting_channel_file(guild_id, channel_id, "role"), format!("{}", role.id.0))?;
             if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The role, {} is now a member of this channel", potential_role_name)) {
 				println!("Couldn't send message, \n {}", e);
 			}
@@ -150,6 +155,18 @@ pub fn start_vote_command(ctx: &mut Context, msg: &Message, args: Args) -> Resul
 		None => return Err(Error::new(ErrorKind::NotFound, "No Guild ID found"))
 	};
 	let channel_id = msg.channel_id.0;
+	let role_id = str_from_file(voting_channel_file(guild_id, channel_id, "role")).unwrap();
+
+	let guild = msg.guild(&ctx.cache).unwrap();
+	let guild = guild.read();
+	let members = &guild.members;
+
+	for member in members.values() {
+		if member.roles.iter().any(|r| role_id == format!("{}", r.0)) {
+			let user = &member.user.read();
+			add_to_file(voting_channel_file(guild_id, channel_id, "novs"), user.name.clone());
+		}
+	}
 
 	write_to_file(voting_channel_file(guild_id, channel_id, "bill"), String::from(vote))?;
 	if let Err(e) = msg.channel_id.say(&ctx.http, &format!("Voting has started on {}", vote)) {
@@ -347,8 +364,6 @@ pub fn abs_command(ctx: &mut Context, msg: &Message) -> Result<()> {
 }
 
 ///looks at a message to see if it a vote and processes the vote if necessary
-//TODO: add the vote report
-#[allow(unused_assignments)]
 pub fn check_msg_for_votes(msg: Message) -> Result<bool> {
 
 	let guild_id = msg.guild_id.unwrap().0;
@@ -358,7 +373,6 @@ pub fn check_msg_for_votes(msg: Message) -> Result<bool> {
 	if file_contains(guild_file(guild_id, "voting_channels"), format!("{}", msg.channel_id.0)).unwrap() {
 		let vote = msg.content;
 		if file_contains(guild_file(guild_id, "yeas"), vote.clone()).unwrap() {
-			println!("yea");
 			vote_yea(msg.author.name.clone(), msg.channel_id.0, guild_id)?;
 			boolean = true;
 		}
@@ -395,4 +409,33 @@ pub fn add_server(guild: u64) -> Result<()> {
 	}
 
 	Ok(())
+}
+
+#[check]
+#[name = "Admin"]
+fn admin_check(ctx: &mut Context, msg: &Message, _: &mut Args, _: &CommandOptions) -> CheckResult {
+    if let Some(member) = msg.member(&ctx.cache) {
+
+        if let Ok(permissions) = member.permissions(&ctx.cache) {
+            return permissions.administrator().into();
+        }
+    }
+
+    false.into()
+}
+
+#[check]
+#[name = "Speaker"]
+fn speacker_check(ctx: &mut Context, msg: &Message, _: &mut Args, _: &CommandOptions) -> CheckResult {
+    if let Some(member) = msg.member(&ctx.cache) {
+
+        let speaker_roles = vec_from_file(guild_file(msg.guild_id.unwrap().0, "speaker_roles")).unwrap();
+		for role in speaker_roles {
+			if member.roles.iter().any(|r| role == format!("{}", r.0)) {
+				return true.into(); 
+			}
+		}
+    }
+
+    false.into()
 }
