@@ -64,5 +64,3 @@ See also the list of [contributors](https://github.com/Botahamec/discord_gov_bot
 
 ## 🎉 Acknowledgements <a name = "acknowledgement"></a>
 Thanks to [kylelobo](https://www.github.com/kylelobo) for the [amazing README template](https://github.com/kylelobo/The-Documentation-Compendium/blob/master/en/README_TEMPLATES/Bot.md) used here
-+ Inspiration
-+ References
