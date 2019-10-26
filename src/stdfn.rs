@@ -307,7 +307,7 @@ pub fn check_msg_for_votes(msg: Message) -> Result<()> {
 	if file_contains(guild_file(guild_id, "voting_channels"), format!("{}", msg.channel_id.0)).unwrap() {
 		println!("this is a vote channel");
 		let vote = msg.content;
-		if file_contains(guild_file(guild_id, "yeas"), vote.clone()).unwrap() {println!("yea"); unimplemented!("Yea cast");}
+		if file_contains(guild_file(guild_id, "yeas"), vote.clone()).unwrap() {unimplemented!("Yea cast");}
 		if file_contains(guild_file(guild_id, "nays"), vote.clone()).unwrap() {unimplemented!("Nay cast");}
 		if file_contains(guild_file(guild_id, "abst"), vote.clone()).unwrap() {unimplemented!("Abstain!");}
 	}
@@ -319,11 +319,8 @@ pub fn check_msg_for_votes(msg: Message) -> Result<()> {
 pub fn add_server(guild: u64) -> Result<()> {
 
 	if !file_contains(String::from("data/servers.txt"), format!("{}", guild)).unwrap() {
-<<<<<<< HEAD
 
 		add_to_file(String::from("data/servers.txt"), format!("{}", guild))?;
-=======
->>>>>>> 733463d0cb58e8f83bb7bdfb63b1dc0b6ecd6e0e
 		
 		//sets up directory structure
 		make_dir(format!("data/servers/{}", guild))?; //creates the folder for the server
