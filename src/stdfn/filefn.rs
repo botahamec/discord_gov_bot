@@ -23,7 +23,8 @@ pub fn str_from_file(path: String) -> Result<String> {
 
 pub fn vec_from_file(path: String) -> Result<Vec<String>> {
 	let file = str_from_file(path)?;
-	let vec : Vec<String> = file.split_terminator("\n").map(|s| String::from(s)).collect();
+	let mut vec : Vec<String> = file.split_terminator("\n").map(|s| String::from(s)).collect();
+	if vec.len() > 1 && vec[0] == String::from("") {vec.remove(0);}
 	Ok(vec)
 }
 
@@ -38,6 +39,17 @@ pub fn add_to_file(path: String, string: String) -> Result<()> {
 	let mut text = str_from_file(path.clone())?;
 	text = format!("{}\n{}", text, string);
 	fs::write(path.clone(), text)
+}
+
+///removes an item from a file
+pub fn remove_from_file(path: String, string: String) -> Result<()> {
+	let mut list = vec_from_file(path.clone())?;
+	for item in 0..list.len() {
+		if list[item] == string {list.remove(item);}
+	}
+	let text : String = list.join("\n");
+	write_to_file(path.clone(), text)?;
+	Ok(())
 }
 
 ///returns a path to the file in the database associated with a given guild id
@@ -88,7 +100,6 @@ pub fn channel_from_abbr(guild: u64, abbr: String) -> Result<u64> {
 	let paths = fs::read_dir(format!("data/servers/{}/votes", guild))?;
 	for path in paths {
 		let channel_str = format!("{}", path.unwrap().path().file_name().unwrap().to_str().unwrap());
-		println!("{}", channel_str);
 		let test_abbr = str_from_file(format!("data/servers/{}/votes/{}/abbr.txt", guild, channel_str))?;
 		if test_abbr == abbr {
 			let channel_id = channel_str.parse::<u64>().unwrap();

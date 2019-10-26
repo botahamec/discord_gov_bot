@@ -44,6 +44,12 @@ pub fn add_speaker(ctx: &mut Context, msg: &Message, args: Args) -> CommandResul
     Ok(())
 }
 
+#[command]
+pub fn set_role(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	set_role_command(ctx, msg, args)?;
+	Ok(())
+}
+
 //CHANNELS
 
 #[command]
@@ -65,8 +71,8 @@ pub fn set_abbr(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 }
 
 #[command]
-pub fn set_role(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
-	set_role_command(ctx, msg, args)?;
+pub fn set_results(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
+	set_results_command(ctx, msg, args)?;
 	Ok(())
 }
 
@@ -84,6 +90,12 @@ pub fn set_url(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult {
 	Ok(())
 }
 
+#[command]
+pub fn end_vote(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+	end_vote_command(ctx, msg)?;
+	Ok(())
+}
+
 // REPORTING
 
 #[command]
@@ -98,30 +110,62 @@ pub fn not_voted(ctx: &mut Context, msg: &Message, args: Args) -> CommandResult 
 	Ok(())
 }
 
+// VOTING
+
+#[command]
+pub fn yea(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+	yea_command(ctx, msg)?;
+	Ok(())
+}
+
+#[command]
+pub fn nay(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+	nay_command(ctx, msg)?;
+	Ok(())
+}
+
+#[command]
+pub fn abstain(ctx: &mut Context, msg: &Message, _args: Args) -> CommandResult {
+	abs_command(ctx, msg)?;
+	Ok(())
+}
+
 //GROUPS
 
 group!({
     name: "roles",
-    options: {},
-    commands: [add_speaker],
+    options: {
+		checks: [Admin]
+	},
+    commands: [add_speaker, set_role],
 });
 
 group!({
 	name: "channels",
-	options: {},
-	commands: [voting_channel, set_title, set_abbr, set_role],
+	options: {
+		checks: [Admin]
+	},
+	commands: [voting_channel, set_title, set_abbr, set_results],
 });
 
 group!({
 	name: "speaker",
-	options: {},
-	commands: [start_vote, set_url]
+	options: {
+		checks: [Speaker]
+	},
+	commands: [start_vote, set_url, end_vote]
 });
 
 group!({
 	name: "reporting",
 	options: {},
 	commands: [voted, not_voted]
+});
+
+group!({
+	name: "voting",
+	options: {},
+	commands: [yea, nay, abstain]
 });
 
 pub struct Handler;
@@ -131,11 +175,11 @@ impl EventHandler for Handler {
 	//message saying that the bot is online
 	fn ready(&self, _: Context, _ready: Ready) {println!("The government is now open!");}
 
-	fn message(&self, _ctx: Context, msg: Message) {
+	fn message(&self, ctx: Context, msg: Message) {
 
 		//checks for votes in voting channels
-		match check_msg_for_votes(msg) {
-			Ok(T) => T,
+		match check_msg_for_votes(msg.clone()) {
+			Ok(T) => {if T {vote_report(&ctx, &msg.clone());}},
 			Err(E) => println!("{}", E)
 		};
 	}
@@ -164,7 +208,8 @@ fn main() {
         .group(&ROLES_GROUP)
 		.group(&CHANNELS_GROUP)
 		.group(&SPEAKER_GROUP)
-		.group(&REPORTING_GROUP));
+		.group(&REPORTING_GROUP)
+		.group(&VOTING_GROUP));
 	
 	// start listening for events by starting a single shard
 	if let Err(why) = client.start() {
