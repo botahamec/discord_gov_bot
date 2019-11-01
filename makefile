@@ -10,4 +10,4 @@ target/debug/data:
 	mkdir target/debug/data/servers
 
 run-win: target/debug target/debug/files target/debug/data
-	cd target/debug; discord_gov_bot.exe
+	cd target/debug; ./discord_gov_bot.exe

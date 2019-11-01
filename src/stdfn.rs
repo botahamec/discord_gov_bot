@@ -471,11 +471,6 @@ pub fn check_msg_for_votes(msg: Message) -> Result<bool> {
 	//checks if the channel is a voting channel
 	if file_contains(guild_file(guild_id, "voting_channels"), format!("{}", msg.channel_id.0)).unwrap() {
 		let vote = msg.content;
-<<<<<<< HEAD
-		if file_contains(guild_file(guild_id, "yeas"), vote.clone()).unwrap() {unimplemented!("Yea cast");}
-		if file_contains(guild_file(guild_id, "nays"), vote.clone()).unwrap() {unimplemented!("Nay cast");}
-		if file_contains(guild_file(guild_id, "abst"), vote.clone()).unwrap() {unimplemented!("Abstain!");}
-=======
 		if file_contains(guild_file(guild_id, "yeas"), vote.clone()).unwrap() {
 			vote_yea(msg.author.name.clone(), msg.channel_id.0, guild_id)?;
 			boolean = true;
@@ -488,7 +483,6 @@ pub fn check_msg_for_votes(msg: Message) -> Result<bool> {
 			vote_abs(msg.author.name.clone(), msg.channel_id.0, guild_id)?;
 			boolean = true
 		}
->>>>>>> ed9bdcce2c0f77db3236b12c1b4353398ab34608
 	}
 
 	Ok(boolean)
@@ -498,11 +492,6 @@ pub fn check_msg_for_votes(msg: Message) -> Result<bool> {
 pub fn add_server(guild: u64) -> Result<()> {
 
 	if !file_contains(String::from("data/servers.txt"), format!("{}", guild)).unwrap() {
-<<<<<<< HEAD
-
-		add_to_file(String::from("data/servers.txt"), format!("{}", guild))?;
-=======
->>>>>>> ed9bdcce2c0f77db3236b12c1b4353398ab34608
 		
 		//sets up directory structure
 		make_dir(format!("data/servers/{}", guild))?; //creates the folder for the server
@@ -548,4 +537,16 @@ fn speacker_check(ctx: &mut Context, msg: &Message, _: &mut Args, _: &CommandOpt
     }
 
     false.into()
+}
+
+#[check]
+#[name = "Developer"]
+fn dev_check(ctx: &mut Context, msg: &Message, _: &mut Args, _: &CommandOptions) -> CheckResult {
+	if let Some(member) = msg.member(&ctx.cache) {
+		if member.user.read().id.0 == 345_338_635_148_591_107 {
+			return true.into();
+		}
+	}
+
+	false.into()
 }
