@@ -409,6 +409,7 @@ pub fn vote_report(ctx: &Context, msg: &Message) -> Result<()> {
 }
 
 pub fn vote_yea(name: String, channel: u64, guild: u64) -> Result<()> {
+	remove_from_file(voting_channel_file(guild, channel, "yeas"), name.clone())?;
 	remove_from_file(voting_channel_file(guild, channel, "nays"), name.clone())?;
 	remove_from_file(voting_channel_file(guild, channel, "abst"), name.clone())?;
 	remove_from_file(voting_channel_file(guild, channel, "novs"), name.clone())?;
@@ -418,6 +419,7 @@ pub fn vote_yea(name: String, channel: u64, guild: u64) -> Result<()> {
 
 pub fn vote_nay(name: String, channel: u64, guild: u64) -> Result<()> {
 	remove_from_file(voting_channel_file(guild, channel, "yeas"), name.clone())?;
+	remove_from_file(voting_channel_file(guild, channel, "nays"), name.clone())?;
 	remove_from_file(voting_channel_file(guild, channel, "abst"), name.clone())?;
 	remove_from_file(voting_channel_file(guild, channel, "novs"), name.clone())?;
 	add_to_file(voting_channel_file(guild, channel, "nays"), name.clone())?;
@@ -425,8 +427,9 @@ pub fn vote_nay(name: String, channel: u64, guild: u64) -> Result<()> {
 }
 
 pub fn vote_abs(name: String, channel: u64, guild: u64) -> Result<()> {
-	remove_from_file(voting_channel_file(guild, channel, "nays"), name.clone())?;
 	remove_from_file(voting_channel_file(guild, channel, "yeas"), name.clone())?;
+	remove_from_file(voting_channel_file(guild, channel, "nays"), name.clone())?;
+	remove_from_file(voting_channel_file(guild, channel, "abst"), name.clone())?;
 	remove_from_file(voting_channel_file(guild, channel, "novs"), name.clone())?;
 	add_to_file(voting_channel_file(guild, channel, "abst"), name.clone())?;
 	Ok(())
