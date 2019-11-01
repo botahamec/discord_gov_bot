@@ -111,7 +111,7 @@ pub fn add_voting_channel_command(ctx: &mut Context, msg: &Message) -> Result<()
 	add_to_file(guild_file(guild_id, "voting_channels"), format!("{}", channel_id))?; //add to list of voting channels
 
 	//report that it's done
-	if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The channel now is a voting channel",)) {
+	if let Err(e) = msg.channel_id.say(&ctx.http, "The channel now is a voting channel".to_string()) {
 		println!("Couldn't send message, \n {}", e);
 	};
 	Ok(())
@@ -128,7 +128,7 @@ pub fn set_title_command(ctx: &mut Context, msg: &Message, args: Args) -> Result
 	let channel_id = msg.channel_id.0;
 
 	write_to_file(voting_channel_file(guild_id, channel_id, "title"), String::from(title))?;
-	if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The title for members of this channel has changed")) {
+	if let Err(e) = msg.channel_id.say(&ctx.http, "The title for members of this channel has changed".to_string()) {
 		println!("Couldn't send message, \n {}", e);
 	};
 	Ok(())
@@ -142,7 +142,7 @@ pub fn set_abbr_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<
 	};
 	let channel_id = msg.channel_id.0;
 	write_to_file(voting_channel_file(guild_id, channel_id, "abbr"), String::from(abbr))?;
-	if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The abbreviation for this channel has changed")) {
+	if let Err(e) = msg.channel_id.say(&ctx.http, "The abbreviation for this channel has changed".to_string()) {
 		println!("Couldn't send message, \n {}", e);
 	};
 	Ok(())
@@ -164,7 +164,7 @@ pub fn set_results_command(ctx: &mut Context, msg: &Message, args: Args) -> Resu
 			};
 		},
 		Err(_e) => {
-			if let Err(e) = msg.channel_id.say(&ctx.http, &format!("You must provide a channel id for which channel will be the results channel for this voting channel.")) {
+			if let Err(e) = msg.channel_id.say(&ctx.http, "You must provide a channel id for which channel will be the results channel for this voting channel.".to_string()) {
 				println!("Couldn't send message, \n {}", e);
 			};
 		}
@@ -213,7 +213,7 @@ pub fn set_url_command(ctx: &mut Context, msg: &Message, args: Args) -> Result<(
 	let channel_id = msg.channel_id.0;
 
 	write_to_file(voting_channel_file(guild_id, channel_id, "url"), String::from(url))?;
-	if let Err(e) = msg.channel_id.say(&ctx.http, &format!("The URL has changed")) {
+	if let Err(e) = msg.channel_id.say(&ctx.http, "The URL has changed".to_string()) {
 		println!("Couldn't send message, \n {}", e);
 	};
 	Ok(())
@@ -249,10 +249,10 @@ pub fn end_vote_command(ctx: &mut Context, msg: &Message) -> Result<()> {
 	let mut abst_str = abst.join("\n");
 	let mut novs_str = novs.join("\n");
 
-	if yeas.len() == 0 {yeas_str = String::from("N/A");}
-	if nays.len() == 0 {nays_str = String::from("N/A");}
-	if abst.len() == 0 {abst_str = String::from("N/A");}
-	if novs.len() == 0 {novs_str = String::from("N/A");}
+	if yeas.is_empty() {yeas_str = String::from("N/A");}
+	if nays.is_empty() {nays_str = String::from("N/A");}
+	if abst.is_empty() {abst_str = String::from("N/A");}
+	if novs.is_empty() {novs_str = String::from("N/A");}
 
 	let results_str = str_from_file(voting_channel_file(guild_id, channel_id, "results"))?;
 	let results = ChannelId::from(results_str.parse::<u64>().unwrap());
@@ -312,9 +312,9 @@ pub fn vote_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> Resul
 	let mut nays_str = nays.join("\n");
 	let mut abst_str = abst.join("\n");
 
-	if yeas.len() == 0 {yeas_str = String::from("N/A");}
-	if nays.len() == 0 {nays_str = String::from("N/A");}
-	if abst.len() == 0 {abst_str = String::from("N/A");}
+	if yeas.is_empty() {yeas_str = String::from("N/A");}
+	if nays.is_empty() {nays_str = String::from("N/A");}
+	if abst.is_empty() {abst_str = String::from("N/A");}
 
 	let msg = msg.channel_id.send_message(&ctx.http, |m| {
 		m.content("");
@@ -354,8 +354,7 @@ pub fn not_voted_embed_command(ctx: &mut Context, msg: &Message, args: Args) -> 
 		Ok(i) => i,
 		Err(e) => return Err(Error::new(ErrorKind::InvalidData, e))
 	};
-	let mut novs_str = novs.join("\n");
-	if novs.len() == 0 {novs_str = String::from("N/A");}
+	let novs_str = if novs.is_empty() {String::from("N/A")} else {novs.join("\n")};
 
 	let msg = msg.channel_id.send_message(&ctx.http, |m| {
 		m.content("");

@@ -23,15 +23,15 @@ pub fn str_from_file(path: String) -> Result<String> {
 
 pub fn vec_from_file(path: String) -> Result<Vec<String>> {
 	let file = str_from_file(path)?;
-	let mut vec : Vec<String> = file.split_terminator("\n").map(|s| String::from(s)).collect();
-	if vec.len() > 1 && vec[0] == String::from("") {vec.remove(0);}
+	let mut vec : Vec<String> = file.split_terminator('\n').map(|s| s.to_string()).collect();
+	if vec.len() > 1 && vec[0] == "" {vec.remove(0);}
 	Ok(vec)
 }
 
 ///turns a file into a list of strings and sees if it contains a ceratin value
 pub fn file_contains(path: String, string: String) -> Result<bool> {
 	let file = str_from_file(path)?;
-	Ok(file.split_terminator("\n").any(|m| m == string))
+	Ok(file.split_terminator('\n').any(|m| m == string))
 }
 
 ///converts a file to a list and adds an item to it
@@ -99,7 +99,7 @@ pub fn copy_file(id: u64, file: &str) -> Result<()> {
 pub fn channel_from_abbr(guild: u64, abbr: String) -> Result<u64> {
 	let paths = fs::read_dir(format!("data/servers/{}/votes", guild))?;
 	for path in paths {
-		let channel_str = format!("{}", path.unwrap().path().file_name().unwrap().to_str().unwrap());
+		let channel_str = path.unwrap().path().file_name().unwrap().to_str().unwrap().to_string();
 		let test_abbr = str_from_file(format!("data/servers/{}/votes/{}/abbr.txt", guild, channel_str))?;
 		if test_abbr == abbr {
 			let channel_id = channel_str.parse::<u64>().unwrap();
